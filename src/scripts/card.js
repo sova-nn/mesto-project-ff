@@ -1,12 +1,5 @@
-import { onShowPopup, onClosePopup } from './popup';
-
-const imgCardPopup = document.querySelector('.popup_type_image');
-
 // @todo: Темплейт карточки
 const template = document.querySelector('#card-template').content;
-
-// @todo: DOM узлы
-const cardsList = document.querySelector('.places__list');
 
 // @todo: Функция создания карточки
 function makeCardNode(elem, removeCard, likeCard, addImgPopupHandler) {
@@ -33,25 +26,10 @@ function removeCard(event) {
     event.target.closest('.card').remove();
   };
 
-// @todo: Вывести карточки на страницу
-function addListTemplate(cards) {
-    cards.forEach((el) => {
-        cardsList.appendChild(makeCardNode(el, removeCard, likeCard, addImgPopupHandler));
-    });
-}
-
-function addImgPopupHandler(elem) {
-    const imgCardPopup_img =  imgCardPopup.querySelector('.popup__image');
-
-    imgCardPopup_img.src = elem.target.src;
-    imgCardPopup_img.alt = elem.target.alt;
-
-    onShowPopup(imgCardPopup);
-}
 
 function likeCard(event) {
     event.target.classList.add('card__like-button_is-active');
 }
 
-export { addListTemplate as renderCards };
+export { makeCardNode as renderCard, removeCard, likeCard };
 
