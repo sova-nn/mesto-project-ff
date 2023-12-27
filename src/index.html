@@ -36,10 +36,37 @@
     <div class="popup__content">
       <button type="button" class="popup__close"></button>
       <h3 class="popup__title">Редактировать профиль</h3>
-      <form class="popup__form" name="edit-profile">
-        <input type="text" name="name" class="popup__input popup__input_type_name" placeholder="Имя" required>
-        <input type="text" name="description" class="popup__input popup__input_type_description" placeholder="Занятие" required>
-        <button type="submit" class="button popup__button">Сохранить</button>
+      <form class="popup__form" name="edit-profile" novalidate>
+        <label class="input-label">
+          <input 
+            type="text" 
+            name="edit-name" 
+            class="popup__input popup__input_type_name" 
+            placeholder="Имя" 
+            minlength="2" 
+            maxlength="40"
+            pattern="^[a-zA-Zа-яА-ЯёЁ\- ]+$"
+            data-error="Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы"
+            required
+          >
+          <span class="popup__error"></span>
+        </label>
+        <label class="input-label">
+          <input 
+            type="text" 
+            name="description" 
+            class="popup__input popup__input_type_description" 
+            placeholder="Занятие" 
+            minlength="2" 
+            maxlength="200"
+            pattern="^[a-zA-Zа-яА-ЯёЁ\- ]+$"
+            data-error="Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы"
+            required
+          >
+          <span class="popup__error"></span>
+        </label>
+        <!-- disabled для кнопки сетим сразу - запускаем проверки при редактировании полей -->
+        <button type="submit" class="button popup__button" disabled>Сохранить</button>
       </form>
     </div>
   </div>
@@ -47,10 +74,33 @@
     <div class="popup__content">
       <button type="button" class="popup__close"></button>
       <h3 class="popup__title">Новое место</h3>
-      <form class="popup__form" name="new-place">
-        <input type="text" name="place-name" class="popup__input popup__input_type_card-name" placeholder="Название" required>
-        <input type="url" name="link" class="popup__input popup__input_type_url" placeholder="Ссылка на картинку" required>
-        <button type="submit" class="button popup__button">Сохранить</button>
+      <form class="popup__form" name="new-place" novalidate>
+        <label class="input-label">
+          <input 
+            type="text" 
+            name="place-name" 
+            class="popup__input popup__input_type_card-name" 
+            placeholder="Название" 
+            minlength="2" 
+            maxlength="30"
+            pattern="^[a-zA-Zа-яА-ЯёЁ\- ]+$"
+            data-error="Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы"
+            required
+          >
+          <span class="popup__error"></span>
+        </label>
+        <label class="input-label">
+          <input 
+            type="url" 
+            name="link" 
+            class="popup__input popup__input_type_url" 
+            placeholder="Ссылка на картинку" 
+            pattern="https?://.+"
+            required
+          >
+          <span class="popup__error"></span>
+        </label>
+        <button type="submit" class="button popup__button" disabled>Сохранить</button>
       </form>
     </div>
   </div>
@@ -62,6 +112,29 @@
     </div>
   </div>
 </div>
+ <!-- Форма смены аватара -->
+<div class="popup popup_type_edit-avatar">
+  <div class="popup__content">
+    <button type="button" class="popup__close"></button>
+    <h3 class="popup__title">Обновить аватар</h3>
+    <form class="popup__form" name="edit-avatar" novalidate>
+      <label class="input-label">
+        <input 
+          type="text" 
+          name="avatar" 
+          class="popup__input popup__input_type_name" 
+          placeholder="Ссылка на картинку" 
+          pattern="https?://.+"
+          data-error="Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы"
+          required
+        >
+        <span class="popup__error"></span>
+      </label>
+      <!-- disabled для кнопки сетим сразу - запускаем проверки при редактировании полей -->
+      <button type="submit" class="button popup__button" disabled>Сохранить</button>
+    </form>
+  </div>
+</div>
 
 <template id="card-template">
   <li class="places__item card">
@@ -70,7 +143,10 @@
     <div class="card__description">
       <h2 class="card__title">
       </h2>
-      <button type="button" class="card__like-button"></button>
+      <div class="card__like">
+        <button type="button" class="card__like-button"></button>
+        <span class="card__like-counter">0</span>
+      </div>
     </div>
   </li>
 </template>
