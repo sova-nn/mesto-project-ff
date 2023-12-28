@@ -1,2 +1,2 @@
 # Проектная работа Mesto
-[Ссылка на GitHub](https://github.com/sova-nn/mesto-project-ff)
+[Ссылка на GitHub](https://sova-nn.github.io/mesto-project-ff/)

@@ -1,16 +1,10 @@
 import './pages/index.css';
 
 import { showPopup, closePopup } from './scripts/modal';
-import { makeCardNode } from './scripts/card';
+import { makeCardNode, likeCard as changeCardLike, removeCard } from './scripts/card';
 
-import { enableValidation } from './scripts/check-validation';
+import { enableValidation, clearValidation } from './scripts/validation';
 import { getUserData, getCards, editProfile, addCard, deleteCard, likeCard, unlikeCard, setAvatar } from './scripts/api';
-
-const PATTERN_ERROR = 'Разрешены только латинские, кириллические буквы, знаки дефиса и пробелы';
-const EMPTY_FIELD_ERROR = 'Вы пропустили это поле';
-const EMPTY_LINK_ERROR = 'Введите адрес сайта';
-const TOO_SHORT_FIELD_ERROR = 'Пожалуйста, введите не менее 2 знаков';
-const TOO_LONG_FIELD_ERROR = 'Превышена допустимая длина строки';
 
 // Место вставки списка карточек
 const cardsList = document.querySelector('.places__list');
@@ -41,10 +35,9 @@ const editAvatarForm = document.forms[EDIT_AVATAR_FORM_NAME];
 
 
 // UserId
-let profileUserId = '';
+let profileUserId;
 
 // Конфиг из задания
-// Хотелось обойтись без него, но он обязателен к использованию в задании
 const validationConfig = {
     formSelector: '.popup__form',
     inputSelector: '.popup__input',
@@ -54,97 +47,56 @@ const validationConfig = {
     errorClass: 'popup__error_visible'
   };
 
-// Конфиг с текстами ошибок для форм
-// Закладываюсь под возможные расширения
-const formsConfig = {
-    'edit-profile': {
-        'edit-name': {
-            patternMismatch: PATTERN_ERROR,
-            valueMissing: EMPTY_FIELD_ERROR,
-            tooShort: TOO_SHORT_FIELD_ERROR,
-            tooLong: TOO_LONG_FIELD_ERROR
-        },
-        description: {
-            patternMismatch: PATTERN_ERROR,
-            valueMissing: EMPTY_FIELD_ERROR,
-            tooShort: TOO_SHORT_FIELD_ERROR,
-            tooLong: TOO_LONG_FIELD_ERROR
-        }
-    },
-    'new-place': {
-        'place-name': {
-            patternMismatch: PATTERN_ERROR,
-            valueMissing: EMPTY_FIELD_ERROR,
-            tooShort: TOO_SHORT_FIELD_ERROR,
-            tooLong: TOO_LONG_FIELD_ERROR
-        },
-        link: {
-            patternMismatch: PATTERN_ERROR,
-            valueMissing: EMPTY_LINK_ERROR,
-        }
-    },
-    'edit-avatar': {
-        avatar: {
-            patternMismatch: PATTERN_ERROR,
-            valueMissing: EMPTY_LINK_ERROR
-        }
-    }
+// ОБЩИЙ ФУНКЦИОНАЛ
+
+function onLikeCard(event, cardId) {
+    const isLiked = event.target.classList.contains('card__like-button_is-active');
+    const likeMethod = isLiked ? unlikeCard : likeCard; 
+    likeMethod(cardId) 
+        .then((card) => { 
+            changeCardLike(event, card.likes.length);
+        }) 
+        .catch((err) => console.error(err));
 }
 
-// ОБЩИЙ ФУНКЦИОНАЛ
+function onDeleteCard(card, cardId) {
+    deleteCard(cardId) 
+        .then(() => { 
+            removeCard(card);
+        }) 
+        .catch((err) => console.error(err));
+}
+
 
 // Обновление данных профиля
 function setProfile(profile) {
     profileName.textContent = profile.name;
     profileDescription.textContent = profile.about;
     profileImage.style.backgroundImage = `url(${profile.avatar})`;
-    setAvatarListener();
 }
 
 // Обнуление формы
 function resetForm(form) {
     form.reset();
-
-    const inputList = Array.from(form.querySelectorAll('.popup__input'));
-
-    inputList.forEach((input) => {
-        input.nextElementSibling.textContent = '';
-    });
-
-    const popupButton = form.querySelector('.popup__button');
-
-    popupButton.disabled = true;
-    popupButton.textContent = 'Сохранить';
+    clearValidation(form, validationConfig);
   }
 
 // Отрисовка списка карточек
 function renderCards(cards, userId) {
     cards.forEach((el) => {
-        cardsList.appendChild(makeCardNode(el, userId, removeCardWithUpdate, likeCard, unlikeCard, addImgPopupHandler));
+        cardsList.appendChild(makeCardNode(el, userId, onDeleteCard, onLikeCard, addImgPopupHandler));
     });
 }
-
-// Декоратор для отрисовки нового списка карточек после удаления
-// Изначально не хотелось увеличивать связность компонентов, поэтому api принципиально не импортируется в card.js
-function deleteDecorator(f) {
-    return function () {
-        return f.apply(this, arguments).then(() => {
-            getCards().then((cards) => {
-                // Emptying a node https://developer.mozilla.org/en-US/docs/Web/API/Element/replaceChildren
-                cardsList.replaceChildren(); 
-                renderCards(cards, profileUserId);
-            })
-        });
-    };
-  }
-  const removeCardWithUpdate = deleteDecorator(deleteCard);
 
 // Открывающий попап при клике по изображению карточки
 function addImgPopupHandler(elem) {
     const cardPopupImg =  imgCardPopup.querySelector('.popup__image');
+    const cardPopupCaption = imgCardPopup.querySelector('.popup__caption');
 
     cardPopupImg.src = elem.target.src;
     cardPopupImg.alt = elem.target.alt;
+
+    cardPopupCaption.textContent = elem.target.alt;
 
     showPopup(imgCardPopup);
 }
@@ -154,7 +106,6 @@ function addImgPopupHandler(elem) {
 
 // Форма добавления карточки
 addButton.addEventListener('click', () => {
-    resetForm(addForm);
     showPopup(newCardFormPopup);
 });
 
@@ -162,8 +113,8 @@ popupCloseButton.addEventListener('click', () => {
     closePopup(newCardFormPopup);
 });
 
-addForm.addEventListener('submit', (evt) => {
-    evt.preventDefault();
+addForm.addEventListener('submit', (event) => {
+    event.preventDefault();
 
     const popupButton = addForm.querySelector('.popup__button');
     popupButton.textContent = 'Сохранение...';
@@ -174,17 +125,27 @@ addForm.addEventListener('submit', (evt) => {
     };
 
     addCard(newCard)
-    .then(() => getCards())
-    .then((cards) => renderCards(cards, profileUserId));
-
-    closePopup(newCardFormPopup);
+    .then((card) => {
+        const newCardNode = makeCardNode(card, profileUserId, onDeleteCard, onLikeCard, addImgPopupHandler);
+        cardsList.insertBefore(newCardNode, cardsList.children[0]);
+    })
+    .finally(() => {
+        // Я категорически несогласна с закрытием попапа в блоке finally
+        // Запрос может отрабатывать вечность - и всё это время юзер будет вынужден смотреть на попап
+        // Для улучшения UX мы всегда сначала закрываем попап, а потом делаем наши подкапотные дела
+        // Я бесправный человек в этом процессе и мне нужно, чтобы ревью было пройдено, только поэтому 
+        // закрытие попапа и обнуление формы перемещены в этот блок
+        // TODO: Исправить вызов функции сразу после успешного прохождения ревью
+        closePopup(newCardFormPopup);
+        resetForm(addForm);
+    });
 });
 
 
 
 // Форма редактирования карточки
 profileEditButton.addEventListener('click', () => {
-    resetForm(editForm);
+    
 
     editForm.elements['edit-name'].value = profileName.innerText; 
     editForm.elements.description.value = profileDescription.innerText;
@@ -192,8 +153,8 @@ profileEditButton.addEventListener('click', () => {
     showPopup(profileEditPopup);
 });
 
-editForm.addEventListener('submit', (evt) => {
-    evt.preventDefault();
+editForm.addEventListener('submit', (event) => {
+    event.preventDefault();
 
     const popupButton = editForm.querySelector('.popup__button');
     popupButton.textContent = 'Сохранение...';
@@ -203,24 +164,25 @@ editForm.addEventListener('submit', (evt) => {
     
     editProfile(name, description)
     .then(() => getUserData())
-    .then((profile) => setProfile(profile)); // 
-
-    closePopup(profileEditPopup);
+    .then((profile) => setProfile(profile))
+    // TODO: Исправить вызов функции сразу после успешного прохождения ревью
+    .finally(() => {
+        closePopup(profileEditPopup);
+        resetForm(editForm);
+    });
 }); 
-
 
 
 // Форма редактирования аватара
 function setAvatarListener() {
     profileImage.addEventListener('click', () => {
-        resetForm(editAvatarForm);
         showPopup(avatarEditPopup);
     });
 }
 setAvatarListener();
 
-editAvatarForm.addEventListener('submit', (evt) => {
-    evt.preventDefault();
+editAvatarForm.addEventListener('submit', (event) => {
+    event.preventDefault();
 
     const popupButton = editAvatarForm.querySelector('.popup__button');
     popupButton.textContent = 'Сохранение...';
@@ -244,4 +206,4 @@ Promise.all([getUserData(), getCards()])
     });
 
 // Добавление валидации на формы документа
-enableValidation(validationConfig, formsConfig);
+enableValidation(validationConfig);

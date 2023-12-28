@@ -2,7 +2,7 @@
 const template = document.querySelector('#card-template').content;
 
 // Функция создания карточки
-function makeCardNode(elem, userId, removeCard, likeCard, unlikeCard, addImgPopupHandler) {
+function makeCardNode(elem, userId, deleteCard, likeCard, addImgPopupHandler) {
     if (!userId) {
         console.error('Не получен id профиля!');
         return;
@@ -20,7 +20,7 @@ function makeCardNode(elem, userId, removeCard, likeCard, unlikeCard, addImgPopu
     const deleteBtn = card.querySelector('.card__delete-button');
     if (elem.owner?._id === userId) {
         deleteBtn.addEventListener('click', () => {
-            removeCard(elem._id);
+            deleteCard(card, elem._id);
         });
     } else {
         deleteBtn.remove();
@@ -31,8 +31,8 @@ function makeCardNode(elem, userId, removeCard, likeCard, unlikeCard, addImgPopu
     if (elem.likes.some((like) => like._id === userId)) {
         cardLikeButton.classList.add('card__like-button_is-active');
     }
-    cardLikeButton.addEventListener('click', (evt) => {
-        toggleLikeCard(evt, elem._id, likeCard, unlikeCard);
+    cardLikeButton.addEventListener('click', (event) => {
+        likeCard(event, elem._id);
     });
 
     const likesCounter = card.querySelector('.card__like-counter');
@@ -41,35 +41,17 @@ function makeCardNode(elem, userId, removeCard, likeCard, unlikeCard, addImgPopu
     return card;
 };
 
-
-function toggleLikeCard(event, id, likeCard, unlikeCard) {
-    console.log('card id', id);
-    if (event.target.classList.contains('card__like-button_is-active')) {
-        // Сначала откликаемся на action пользователя, чтобы показать, что он всё сделал правильно,
-        // потом сверяемся по результатам запроса
-        event.target.classList.remove('card__like-button_is-active');
-
-        unlikeCard(id)
-        .then((card) => {
-            event.target.classList.remove('card__like-button_is-active');
-            const likesCounter = event.target.nextElementSibling;
-            likesCounter.textContent = card.likes.length;
-        })
-        .catch(() => event.target.classList.add('card__like-button_is-active'));
-        
-    } else {
-        event.target.classList.add('card__like-button_is-active');
-
-        likeCard(id)
-        .then((card) => {
-            event.target.classList.add('card__like-button_is-active');
-            const likesCounter = event.target.nextElementSibling;
-            likesCounter.textContent = card.likes.length;
-        })
-        .catch(() => event.target.classList.remove('card__like-button_is-active'));
-    }
-    
+// Я думала, что сохранялось предыдущее правило экспорта из этого файла только одного метода makeCardNode
+// Теперь понятно, что количество экспортов можно увеличить.
+function likeCard(event, likeCount) {
+    event.target.classList.toggle('card__like-button_is-active')
+    const likesCounter = event.target.nextElementSibling; 
+    likesCounter.textContent = likeCount; 
 }
 
-export { makeCardNode };
+function removeCard(card) {
+    card.remove();
+}
+
+export { makeCardNode, likeCard, removeCard };
 
